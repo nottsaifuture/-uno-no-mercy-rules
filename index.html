@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No Mercy Helper</title>
+<meta name="description" content="A kid-friendly rules helper for UNO Show 'Em No Mercy: cards, stacking, the Mercy Rule, scoring and a quiz.">
+<style>
+:root{
+  --bg:#fff8ec; --panel:#ffffff; --ink:#24180f; --muted:#6b5a4a; --line:#ecdcc4;
+  --red:#e0352b; --yellow:#f2b705; --green:#2e9e4f; --blue:#1f6fd1; --black:#1b1b1b;
+  --accent:#e0352b; --shadow:0 4px 14px rgba(60,30,0,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17120d; --panel:#231b14; --ink:#fbefdf; --muted:#c3ad94; --line:#3a2e22;
+    --black:#000; --shadow:0 4px 14px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17120d; --panel:#231b14; --ink:#fbefdf; --muted:#c3ad94; --line:#3a2e22;
+  --black:#000; --shadow:0 4px 14px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 "Trebuchet MS",system-ui,-apple-system,"Segoe UI",sans-serif;overflow-x:hidden}
+header{padding:20px 16px 8px;text-align:center}
+h1{margin:0;font-size:clamp(26px,6vw,40px);letter-spacing:.5px}
+h1 .no{color:var(--red)}
+.sub{color:var(--muted);margin:4px 0 0}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:2px solid var(--line);display:flex;gap:6px;overflow-x:auto;padding:8px 16px;scrollbar-width:none}
+nav button{flex:0 0 auto;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--red);border-color:var(--red);color:#fff}
+main{max-width:900px;margin:0 auto;padding:16px}
+section{display:none}
+section.on{display:block;animation:pop .25s ease}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+h2{font-size:24px;margin:8px 0 12px}
+.box{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:16px}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;margin:0}
+ol.steps li{counter-increment:s;position:relative;padding:8px 0 8px 46px;border-bottom:1px dashed var(--line)}
+ol.steps li:last-child{border:0}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:8px;width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
+select,input[type=number]{font:inherit;padding:8px 10px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);max-width:100%}
+select{width:100%}
+.answer{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border-left:6px solid var(--green);min-height:24px}
+.btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:10px 16px;cursor:pointer;background:var(--blue);color:#fff}
+.btn.red{background:var(--red)} .btn.green{background:var(--green)} .btn.ghost{background:var(--panel);color:var(--ink);border:2px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters{margin-bottom:12px}
+.chip{font:inherit;font-weight:700;border:2px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.card{aspect-ratio:2/3;border-radius:14px;border:4px solid #fff;box-shadow:var(--shadow);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;cursor:pointer;font-weight:800;position:relative;overflow:hidden;font-family:inherit;font-size:15px}
+.card .big{font-size:30px;line-height:1.1}
+.card:focus-visible,.chip:focus-visible,.btn:focus-visible,nav button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.c-red{background:var(--red)} .c-yellow{background:var(--yellow);color:#2a1d00} .c-green{background:var(--green)} .c-blue{background:var(--blue)}
+.c-wild{background:conic-gradient(var(--red) 0 25%,var(--yellow) 0 50%,var(--green) 0 75%,var(--blue) 0);}
+.c-wild .lbl{background:var(--black);border-radius:10px;padding:6px 4px;width:100%}
+.detail{display:none}
+.detail.on{display:block}
+.tip{background:#fff3c4;color:#3a2a00;border-radius:12px;padding:10px 12px;margin-top:10px}
+.tower{display:flex;flex-direction:column-reverse;gap:6px;min-height:60px;margin:12px 0}
+.tower .blk{border-radius:10px;color:#fff;font-weight:800;padding:8px 12px;box-shadow:var(--shadow);animation:pop .2s}
+.meter{height:30px;border-radius:999px;background:var(--line);overflow:hidden;margin:12px 0}
+.meter>div{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));transition:width .3s}
+.hand{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0;min-height:40px}
+.mini{width:18px;height:27px;border-radius:4px;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.big-num{font-size:40px;font-weight:900}
+.out{font-size:22px;font-weight:900;color:var(--red)}
+table{width:100%;border-collapse:collapse}
+td{padding:8px 4px;border-bottom:1px dashed var(--line);vertical-align:middle}
+td:last-child{text-align:right;white-space:nowrap}
+td input{width:70px}
+.total{font-size:28px;font-weight:900;text-align:right;margin-top:10px}
+.bar{height:16px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar>div{height:100%;background:var(--green);width:0;transition:width .3s}
+.opts{display:grid;gap:8px;margin-top:12px}
+.opt{font:inherit;text-align:left;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.opt.right{background:var(--green);color:#fff;border-color:var(--green)}
+.opt.wrong{background:var(--red);color:#fff;border-color:var(--red)}
+.muted{color:var(--muted)}
+footer{max-width:900px;margin:0 auto;padding:8px 16px 32px;color:var(--muted);font-size:14px;text-align:center}
+.confetti{position:fixed;top:-10px;width:10px;height:14px;z-index:50;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>UNO Show 'Em <span class="no">No Mercy</span> Helper</h1>
+  <p class="sub">Learn the rules, try the cards, then test yourself! 🎉</p>
+</header>
+
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" data-tab="start" aria-selected="true">🏠 Start</button>
+  <button role="tab" data-tab="cards" aria-selected="false">🃏 Cards</button>
+  <button role="tab" data-tab="stack" aria-selected="false">🏗️ Stacking</button>
+  <button role="tab" data-tab="mercy" aria-selected="false">😱 Mercy</button>
+  <button role="tab" data-tab="score" aria-selected="false">⭐ Score</button>
+  <button role="tab" data-tab="quiz" aria-selected="false">🧠 Quiz</button>
+</nav>
+
+<main>
+<!-- START -->
+<section id="start" class="on" role="tabpanel">
+  <h2>How to play in 7 steps</h2>
+  <div class="box">
+    <ol class="steps">
+      <li>Everyone gets <b>7 cards</b>. Flip one card from the deck to start the discard pile.</li>
+      <li>On your turn, play a card that matches the top card by <b>colour</b>, <b>number</b> or <b>symbol</b>. Wild cards can go on anything.</li>
+      <li>Can't play? <b>Keep drawing</b> until you get a card you can play. (No Mercy!)</li>
+      <li>Draw cards can be <b>stacked</b>: put down a draw card that's the same or bigger to pass the pain along.</li>
+      <li>Play a <b>7</b>: swap hands with any player. Play a <b>0</b>: everyone passes their hand to the next player.</li>
+      <li>If you ever have <b>25 or more cards</b>, the Mercy Rule knocks you out!</li>
+      <li>Shout <b>"UNO!"</b> when you have one card left. Get rid of all your cards (or be the last player left) to win the round.</li>
+    </ol>
+  </div>
+
+  <h2>🤔 What should I do?</h2>
+  <div class="box">
+    <label for="sit" class="muted">Pick what's happening:</label>
+    <select id="sit"></select>
+    <div class="answer" id="sitAns" aria-live="polite">Choose a situation above.</div>
+  </div>
+</section>
+
+<!-- CARDS -->
+<section id="cards" role="tabpanel">
+  <h2>Meet the cards</h2>
+  <div class="row filters" id="filters">
+    <button class="chip on" data-f="all">All</button>
+    <button class="chip" data-f="number">Numbers</button>
+    <button class="chip" data-f="action">Action</button>
+    <button class="chip" data-f="draw">Draw</button>
+    <button class="chip" data-f="wild">Wild</button>
+  </div>
+  <div class="box detail" id="cardDetail" aria-live="polite"></div>
+  <div class="grid" id="cardGrid"></div>
+</section>
+
+<!-- STACKING -->
+<section id="stack" role="tabpanel">
+  <h2>Build a stack tower</h2>
+  <div class="box">
+    <p>Tap draw cards to stack them. You can only stack a card that is <b>the same or higher</b> than the top one. The player who can't (or won't) stack draws <b>everything</b>!</p>
+    <div class="row" id="stackBtns"></div>
+    <div class="tower" id="tower"></div>
+    <p class="big-num" id="stackTotal">0 cards</p>
+    <p id="stackMsg" class="muted" aria-live="polite">Start with any draw card.</p>
+    <div class="row">
+      <button class="btn red" id="stackTake">I can't stack: I draw them all</button>
+      <button class="btn ghost" id="stackReset">Start over</button>
+    </div>
+  </div>
+</section>
+
+<!-- MERCY -->
+<section id="mercy" role="tabpanel">
+  <h2>The Mercy Rule meter</h2>
+  <div class="box">
+    <p>If you ever hold <b>25 cards or more</b>, you're knocked out of the round. Add cards and see how close you get!</p>
+    <div class="row">
+      <button class="btn" data-add="1">+1</button>
+      <button class="btn" data-add="2">+2</button>
+      <button class="btn" data-add="4">+4</button>
+      <button class="btn" data-add="6">+6</button>
+      <button class="btn" data-add="10">+10</button>
+      <button class="btn green" data-add="-1">Play a card (−1)</button>
+    </div>
+    <div class="meter" aria-hidden="true"><div id="meterFill"></div></div>
+    <p class="big-num"><span id="handCount">7</span> / 25</p>
+    <div class="hand" id="handView" aria-hidden="true"></div>
+    <p id="mercyMsg" aria-live="polite"></p>
+    <button class="btn ghost" id="mercyReset">Reset to 7 cards</button>
+  </div>
+</section>
+
+<!-- SCORE -->
+<section id="score" role="tabpanel">
+  <h2>Points calculator</h2>
+  <div class="box">
+    <p>When someone wins a round, they score points for the cards left in everyone else's hands. First to <b>1,000 points</b> wins the game!</p>
+    <table>
+      <tr><td>Number cards: add up the numbers</td><td><input type="number" min="0" id="sNum" value="0" aria-label="Total of number cards"></td></tr>
+      <tr><td>Action cards (Skip, Reverse, Draw 2, Draw 4, Discard All, Skip Everyone) <span class="muted">× 20</span></td><td><input type="number" min="0" id="sAct" value="0" aria-label="Number of action cards"></td></tr>
+      <tr><td>Wild cards <span class="muted">× 50</span></td><td><input type="number" min="0" id="sWild" value="0" aria-label="Number of wild cards"></td></tr>
+      <tr><td>Players knocked out by Mercy <span class="muted">× 250</span></td><td><input type="number" min="0" id="sKo" value="0" aria-label="Players knocked out"></td></tr>
+    </table>
+    <div class="total"><span id="sTotal">0</span> points</div>
+    <div class="bar" aria-hidden="true"><div id="sBar"></div></div>
+    <p class="muted" id="sToGo"></p>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz" role="tabpanel">
+  <h2>Rules quiz</h2>
+  <div class="box">
+    <div class="row" style="justify-content:space-between">
+      <span id="qProg" class="muted"></span>
+      <span class="muted">Best: <b id="qBest">–</b>/10</span>
+    </div>
+    <h3 id="qText" style="margin:10px 0 0"></h3>
+    <div class="opts" id="qOpts"></div>
+    <p id="qFeedback" aria-live="polite"></p>
+    <button class="btn" id="qNext" disabled>Next ➜</button>
+  </div>
+</section>
+</main>
+
+<footer>
+  Fan-made helper for learning. Not affiliated with or endorsed by Mattel. UNO is a trademark of Mattel.<br>
+  Families play differently, so check the rule sheet in your box for house rules.
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Tabs ---------- */
+var tabs = document.querySelectorAll("nav button");
+function showTab(id){
+  tabs.forEach(function(b){ b.setAttribute("aria-selected", b.dataset.tab === id ? "true" : "false"); });
+  document.querySelectorAll("main section").forEach(function(s){ s.classList.toggle("on", s.id === id); });
+  try { localStorage.setItem("nm-tab", id); } catch(e){}
+}
+tabs.forEach(function(b){ b.addEventListener("click", function(){ showTab(b.dataset.tab); }); });
+try { var saved = localStorage.getItem("nm-tab"); if (saved && document.getElementById(saved)) showTab(saved); } catch(e){}
+
+/* ---------- Situations ---------- */
+var SITS = [
+  ["I have no card that matches.", "Draw from the deck and keep drawing until you get a card you can play, then play it. Watch out for the Mercy Rule!"],
+  ["Someone played a Draw 2 on me.", "Stack a Draw 2 or anything bigger (Draw 4, Wild Draw 6, Wild Draw 10) to pass it on. If you can't, draw all the cards and your turn is over."],
+  ["Someone played a Wild Draw 6 on me.", "You can only stack a Wild Draw 6 or a Wild Draw 10. A Draw 2 or Draw 4 is too small. Otherwise, draw them all."],
+  ["I played a 7.", "Pick any player and swap your whole hand with theirs. Choose someone with fewer cards!"],
+  ["I played a 0.", "Everybody passes their hand to the next player in the direction of play."],
+  ["Someone played Wild Color Roulette.", "The next player picks a colour, then flips cards from the deck until that colour shows up. They keep every card they flipped."],
+  ["I have 25 cards!", "Oh no! The Mercy Rule says you're out of this round. Put your cards at the bottom of the deck."],
+  ["I'm down to my last card.", "Shout \"UNO!\" If someone catches you before you say it, you have to draw cards."],
+  ["I have lots of one colour.", "Play a Discard All of that colour and you can throw away every card of that colour at once!"],
+  ["I played Skip Everyone.", "Everyone else gets skipped, so it's your turn again straight away. Play another card!"]
+];
+var sit = document.getElementById("sit"), sitAns = document.getElementById("sitAns");
+sit.innerHTML = '<option value="">— choose —</option>' + SITS.map(function(s,i){ return '<option value="'+i+'">'+s[0]+'</option>'; }).join("");
+sit.addEventListener("change", function(){ sitAns.textContent = sit.value === "" ? "Choose a situation above." : SITS[+sit.value][1]; });
+
+/* ---------- Cards ---------- */
+var CARDS = [
+  {n:"Numbers 1–9", big:"5", c:"blue", t:"number", d:"Match by colour or number. The 7 is extra special (see below).", tip:"Save matching numbers so you can change colour when you need to."},
+  {n:"7: Swap", big:"7", c:"green", t:"number action", d:"Swap your whole hand with any player you choose.", tip:"Swap with the player who has the fewest cards."},
+  {n:"0: Pass", big:"0", c:"yellow", t:"number action", d:"Everyone passes their hand to the next player in the direction of play.", tip:"Great to play when you have a huge hand!"},
+  {n:"Skip", big:"⊘", c:"red", t:"action", d:"The next player loses their turn.", tip:"Use it when the next player is about to say UNO."},
+  {n:"Reverse", big:"⇄", c:"blue", t:"action", d:"Turn order switches direction.", tip:"With two players, it works like a Skip."},
+  {n:"Skip Everyone", big:"⊘⊘", c:"green", t:"action", d:"Everyone is skipped, so you go again.", tip:"Follow it with a card that changes colour."},
+  {n:"Discard All", big:"🗑️", c:"red", t:"action", d:"Throw away all cards in your hand of this card's colour.", tip:"Wait until you're holding lots of that colour."},
+  {n:"Draw 2", big:"+2", c:"yellow", t:"action draw", d:"The next player draws 2 and loses their turn, unless they stack.", tip:"Can be stacked with another Draw 2 or anything bigger."},
+  {n:"Draw 4", big:"+4", c:"blue", t:"action draw", d:"A coloured Draw 4! The next player draws 4 unless they stack.", tip:"Stack it on a Draw 2 or a Draw 4."},
+  {n:"Wild Reverse Draw 4", big:"⇄+4", c:"wild", t:"wild draw", d:"Choose a colour, reverse the direction, and the player who goes next draws 4.", tip:"It counts as a Draw 4 for stacking."},
+  {n:"Wild Draw 6", big:"+6", c:"wild", t:"wild draw", d:"Choose a colour. The next player draws 6 unless they stack a Draw 6 or Draw 10.", tip:"A great defence when a stack is coming at you."},
+  {n:"Wild Draw 10", big:"+10", c:"wild", t:"wild draw", d:"Choose a colour. The next player draws 10 unless they stack another Draw 10.", tip:"The biggest card in the deck. Nothing beats it!"},
+  {n:"Wild Color Roulette", big:"🎰", c:"wild", t:"wild", d:"The next player picks a colour and flips cards until they hit it. They keep all the flipped cards.", tip:"Can push someone towards the Mercy Rule!"}
+];
+var grid = document.getElementById("cardGrid"), detail = document.getElementById("cardDetail");
+grid.innerHTML = CARDS.map(function(c,i){
+  var inner = '<span class="big">'+c.big+'</span><span>'+c.n+'</span>';
+  if (c.c === "wild") inner = '<span class="lbl"><span class="big">'+c.big+'</span><br>'+c.n+'</span>';
+  return '<button class="card c-'+c.c+'" data-i="'+i+'" data-t="'+c.t+'" aria-label="'+c.n+'">'+inner+'</button>';
+}).join("");
+grid.addEventListener("click", function(e){
+  var b = e.target.closest(".card"); if (!b) return;
+  var c = CARDS[+b.dataset.i];
+  detail.innerHTML = '<h3 style="margin:0">'+c.n+'</h3><p>'+c.d+'</p><div class="tip">💡 <b>Tip:</b> '+c.tip+'</div>';
+  detail.classList.add("on");
+  detail.scrollIntoView({behavior:"smooth", block:"nearest"});
+});
+document.getElementById("filters").addEventListener("click", function(e){
+  var f = e.target.closest(".chip"); if (!f) return;
+  document.querySelectorAll("#filters .chip").forEach(function(x){ x.classList.toggle("on", x === f); });
+  grid.querySelectorAll(".card").forEach(function(card){
+    card.style.display = (f.dataset.f === "all" || card.dataset.t.split(" ").indexOf(f.dataset.f) >= 0) ? "" : "none";
+  });
+});
+
+/* ---------- Stacking ---------- */
+var STK = [
+  {n:"Draw 2", v:2, col:"var(--yellow)"},
+  {n:"Draw 4", v:4, col:"var(--blue)"},
+  {n:"Wild Reverse Draw 4", v:4, col:"#444"},
+  {n:"Wild Draw 6", v:6, col:"#333"},
+  {n:"Wild Draw 10", v:10, col:"#111"}
+];
+var stack = [], players = ["You","Mia","Leo","Sam"];
+var stackBtns = document.getElementById("stackBtns"), tower = document.getElementById("tower");
+var stackTotal = document.getElementById("stackTotal"), stackMsg = document.getElementById("stackMsg");
+stackBtns.innerHTML = STK.map(function(s,i){ return '<button class="btn ghost" data-s="'+i+'">'+s.n+'</button>'; }).join("");
+function renderStack(){
+  var top = stack.length ? stack[stack.length-1].v : 0;
+  var sum = stack.reduce(function(a,s){ return a+s.v; }, 0);
+  tower.innerHTML = stack.map(function(s,i){
+    return '<div class="blk" style="background:'+s.col+'">'+players[i % players.length]+' played '+s.n+' (+'+s.v+')</div>';
+  }).join("");
+  stackTotal.textContent = sum + (sum === 1 ? " card" : " cards");
+  stackBtns.querySelectorAll("button").forEach(function(b){ b.disabled = STK[+b.dataset.s].v < top; });
+  document.getElementById("stackTake").disabled = !stack.length;
+}
+stackBtns.addEventListener("click", function(e){
+  var b = e.target.closest("button"); if (!b || b.disabled) return;
+  stack.push(STK[+b.dataset.s]);
+  stackMsg.textContent = "Now it's " + players[stack.length % players.length] + "'s turn. Stack the same or higher, or draw them all!";
+  renderStack();
+});
+document.getElementById("stackTake").addEventListener("click", function(){
+  var sum = stack.reduce(function(a,s){ return a+s.v; }, 0);
+  stackMsg.textContent = players[stack.length % players.length] + " draws " + sum + " cards and loses their turn! 😱";
+  stack = []; renderStack();
+  stackBtns.querySelectorAll("button").forEach(function(b){ b.disabled = false; });
+});
+document.getElementById("stackReset").addEventListener("click", function(){ stack = []; stackMsg.textContent = "Start with any draw card."; renderStack(); });
+renderStack();
+
+/* ---------- Mercy ---------- */
+var hand = 7, COLS = ["var(--red)","var(--yellow)","var(--green)","var(--blue)"];
+function renderMercy(){
+  document.getElementById("handCount").textContent = hand;
+  document.getElementById("meterFill").style.width = Math.min(100, hand/25*100) + "%";
+  var h = ""; for (var i=0;i<hand;i++) h += '<span class="mini" style="background:'+COLS[i%4]+'"></span>';
+  document.getElementById("handView").innerHTML = h;
+  var m = document.getElementById("mercyMsg");
+  if (hand >= 25) { m.innerHTML = '<span class="out">💥 KNOCKED OUT! 25+ cards. No mercy!</span>'; burst(); }
+  else if (hand >= 20) m.textContent = "😰 Danger zone! Only " + (25-hand) + " more and you're out.";
+  else if (hand >= 13) m.textContent = "😬 Getting heavy. Try to play cards fast!";
+  else if (hand === 0) m.textContent = "🏆 No cards left. You win the round!";
+  else m.textContent = "🙂 You're safe for now.";
+  document.querySelectorAll("[data-add]").forEach(function(b){
+    var a = +b.dataset.add; b.disabled = hand >= 25 || (a < 0 && hand === 0);
+  });
+}
+document.querySelectorAll("[data-add]").forEach(function(b){
+  b.addEventListener("click", function(){ hand = Math.max(0, Math.min(25, hand + +b.dataset.add)); renderMercy(); });
+});
+document.getElementById("mercyReset").addEventListener("click", function(){ hand = 7; renderMercy(); });
+renderMercy();
+
+/* ---------- Score ---------- */
+var sIds = ["sNum","sAct","sWild","sKo"], sMul = [1,20,50,250];
+function renderScore(){
+  var t = 0;
+  sIds.forEach(function(id,i){ var v = Math.max(0, parseInt(document.getElementById(id).value,10) || 0); t += v * sMul[i]; });
+  document.getElementById("sTotal").textContent = t.toLocaleString();
+  document.getElementById("sBar").style.width = Math.min(100, t/10) + "%";
+  document.getElementById("sToGo").textContent = t >= 1000 ? "🏆 That's 1,000 or more. You win the game!" : (1000 - t).toLocaleString() + " points to go to win the game.";
+}
+sIds.forEach(function(id){ document.getElementById(id).addEventListener("input", renderScore); });
+renderScore();
+
+/* ---------- Quiz ---------- */
+var QS = [
+  ["How many cards does each player start with?", ["5","7","10"], 1],
+  ["How many cards knock you out with the Mercy Rule?", ["15","20","25"], 2],
+  ["You can't play a card. What do you do?", ["Draw 1 and stop","Keep drawing until you can play","Skip your turn"], 1],
+  ["What does a 7 let you do?", ["Swap hands with any player","Draw 7 cards","Skip 7 players"], 0],
+  ["What happens when a 0 is played?", ["Everyone passes their hand along","The round ends","Nothing"], 0],
+  ["Someone plays Wild Draw 6 on you. Which card can you stack?", ["Draw 2","Draw 4","Wild Draw 10"], 2],
+  ["Which card is the biggest draw card?", ["Wild Draw 6","Wild Draw 10","Draw 4"], 1],
+  ["What does Discard All do?", ["Throw away all your cards of that colour","Everyone discards a card","Ends the game"], 0],
+  ["What does Skip Everyone do?", ["Skips the next player","Skips everyone so you go again","Reverses direction"], 1],
+  ["In Wild Color Roulette, the next player…", ["Draws 4","Flips cards until they find the chosen colour","Picks a player to swap with"], 1],
+  ["How many points do you need to win the game?", ["500","1,000","2,000"], 1],
+  ["How many points is a wild card worth?", ["20","50","100"], 1],
+  ["What do you shout when you have one card left?", ["\"No Mercy!\"","\"UNO!\"","\"Stack!\""], 1]
+];
+var qList = [], qi = 0, qScore = 0;
+function shuffle(a){ for (var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function getBest(){ try { return localStorage.getItem("nm-best"); } catch(e){ return null; } }
+function startQuiz(){ qList = shuffle(QS.slice()).slice(0,10); qi = 0; qScore = 0; showQ(); }
+function showQ(){
+  var b = getBest(); document.getElementById("qBest").textContent = b === null ? "–" : b;
+  var fb = document.getElementById("qFeedback"), nx = document.getElementById("qNext"), opts = document.getElementById("qOpts");
+  fb.textContent = ""; nx.disabled = true;
+  if (qi >= qList.length) {
+    document.getElementById("qProg").textContent = "Finished!";
+    document.getElementById("qText").textContent = "You got " + qScore + " out of 10! " + (qScore >= 8 ? "🌟 Rules expert!" : qScore >= 5 ? "👍 Nice work!" : "📚 Have another go!");
+    opts.innerHTML = "";
+    if (b === null || qScore > +b) { try { localStorage.setItem("nm-best", qScore); } catch(e){} document.getElementById("qBest").textContent = qScore; }
+    if (qScore >= 8) burst();
+    nx.textContent = "Play again ↻"; nx.disabled = false;
+    return;
+  }
+  nx.textContent = "Next ➜";
+  var q = qList[qi];
+  document.getElementById("qProg").textContent = "Question " + (qi+1) + " of 10 · Score " + qScore;
+  document.getElementById("qText").textContent = q[0];
+  opts.innerHTML = q[1].map(function(o,i){ return '<button class="opt" data-i="'+i+'">'+o+'</button>'; }).join("");
+}
+document.getElementById("qOpts").addEventListener("click", function(e){
+  var b = e.target.closest(".opt"); if (!b || document.getElementById("qNext").disabled === false) return;
+  var q = qList[qi], pick = +b.dataset.i, all = this.querySelectorAll(".opt");
+  all[q[2]].classList.add("right");
+  if (pick === q[2]) { qScore++; document.getElementById("qFeedback").textContent = "✅ Correct!"; }
+  else { b.classList.add("wrong"); document.getElementById("qFeedback").textContent = "❌ Not quite. The answer is: " + q[1][q[2]]; }
+  all.forEach(function(x){ x.disabled = true; });
+  document.getElementById("qNext").disabled = false;
+});
+document.getElementById("qNext").addEventListener("click", function(){
+  if (qi >= qList.length) startQuiz(); else { qi++; showQ(); }
+});
+startQuiz();
+
+/* ---------- Confetti ---------- */
+function burst(){
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var cols = ["#e0352b","#f2b705","#2e9e4f","#1f6fd1"];
+  for (var i=0;i<60;i++){
+    var p = document.createElement("div");
+    p.className = "confetti";
+    p.style.left = Math.random()*100 + "vw";
+    p.style.background = cols[i%4];
+    p.style.animationDuration = (1.5 + Math.random()*1.5) + "s";
+    document.body.appendChild(p);
+    setTimeout(function(x){ return function(){ x.remove(); }; }(p), 3200);
+  }
+}
+})();
+</script>
+</body>
+</html>
