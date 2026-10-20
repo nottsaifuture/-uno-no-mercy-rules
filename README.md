@@ -2,7 +2,7 @@
 
 A kid-friendly, single-page rules helper for **UNO Show 'Em No Mercy**. It needs no install and works offline: just open `index.html`.
 
-**Play it:** https://nottsaifuture.github.io/uno-no-mercy-rules/
+**Play it:** https://nottsaifuture.github.io/-uno-no-mercy-rules/
 
 ## What's inside
 - 🏠 **Start**: how to play in 7 steps, plus a "What should I do?" picker
